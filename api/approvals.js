@@ -190,7 +190,7 @@ async function handler(req, res) {
             rampAPI.getPendingReimbursements()
         ]);
 
-        // Transform and combine transactions, then select 5 most recent ever
+        // Transform and combine transactions, then select 10 most recent ever
         const allApprovals = [];
         
         // Transform all matching transactions
@@ -213,9 +213,9 @@ async function handler(req, res) {
             });
         }
         
-        // Sort by date descending (most recent first) and limit to 5
+        // Sort by date descending (most recent first) and limit to 10
         allApprovals.sort((a, b) => new Date(b.dateSubmitted) - new Date(a.dateSubmitted));
-        const recentApprovals = allApprovals.slice(0, 5);
+        const recentApprovals = allApprovals.slice(0, 10);
         
         return res.status(200).json({
             success: true,
