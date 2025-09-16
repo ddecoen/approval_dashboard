@@ -68,13 +68,15 @@ class RampAPI {
         return await response.json();
     }
 
-    // Fetch pending transactions
-    async getPendingTransactions(minAmount = 100000) { // $1000 in cents
+    // Fetch transactions over $10,000 (all statuses)
+    async getPendingTransactions(minAmount = 1000000) { // $10,000 in cents
         const params = new URLSearchParams();
         
         if (minAmount) {
             params.append('min_amount', minAmount.toString());
         }
+        
+        // No status filters - show all transactions
         
         const queryString = params.toString();
         const endpoint = `/transactions${queryString ? '?' + queryString : ''}`;
@@ -82,17 +84,16 @@ class RampAPI {
         return await this.makeRequest(endpoint);
     }
 
-    // Fetch pending reimbursements
-    async getPendingReimbursements(minAmount = 100000) { // $1000 in cents
+    // Fetch reimbursements over $10,000 (all statuses)
+    async getPendingReimbursements(minAmount = 1000000) { // $10,000 in cents
         const params = new URLSearchParams();
         
         if (minAmount) {
             params.append('min_amount', minAmount.toString());
         }
         
-        // Remove status filter to see all reimbursements
-        // params.append('status', 'PENDING_APPROVAL');
-
+        // No status filters - show all reimbursements
+        
         const queryString = params.toString();
         const endpoint = `/reimbursements${queryString ? '?' + queryString : ''}`;
         
@@ -104,8 +105,8 @@ class RampAPI {
 function transformTransaction(rampTransaction) {
     const amount = rampTransaction.amount / 100; // Convert from cents
     
-    // Only include transactions over $1,000 (lowered from $10,000)
-    if (amount < 1000) {
+    // Show all transactions over $10,000 regardless of status
+    if (amount < 10000) {
         return null;
     }
 
@@ -117,7 +118,7 @@ function transformTransaction(rampTransaction) {
         requestor: `${rampTransaction.card_holder?.first_name || ''} ${rampTransaction.card_holder?.last_name || ''}`.trim(),
         dateSubmitted: rampTransaction.user_transaction_time || rampTransaction.accounting_date,
         priority: calculatePriority(amount),
-        status: 'pending',
+        status: 'all_statuses', // Show regardless of actual status
         type: 'transaction'
     };
 }
@@ -125,8 +126,8 @@ function transformTransaction(rampTransaction) {
 function transformReimbursement(rampReimbursement) {
     const amount = rampReimbursement.amount?.amount / 100 || 0;
     
-    // Only include reimbursements over $1,000 (lowered from $10,000)
-    if (amount < 1000) {
+    // Show all reimbursements over $10,000 regardless of status
+    if (amount < 10000) {
         return null;
     }
 
@@ -138,7 +139,7 @@ function transformReimbursement(rampReimbursement) {
         requestor: `${rampReimbursement.user?.first_name || ''} ${rampReimbursement.user?.last_name || ''}`.trim(),
         dateSubmitted: rampReimbursement.created_at,
         priority: calculatePriority(amount),
-        status: 'pending',
+        status: 'all_statuses', // Show regardless of actual status
         type: 'reimbursement'
     };
 }
