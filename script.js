@@ -99,26 +99,26 @@ let useRampAPI = false;
 
 // Initialize Ramp integration if available
 function initializeRampIntegration() {
-    if (typeof RampIntegration !== 'undefined') {
-        rampIntegration = new RampIntegration();
+    if (typeof SecureRampIntegration !== 'undefined') {
+        rampIntegration = new SecureRampIntegration();
         useRampAPI = rampIntegration.isConfigured;
         
         if (useRampAPI) {
-            console.log('Ramp API integration enabled');
+            console.log('Secure Ramp API integration enabled');
             // Test the connection
             rampIntegration.testConnection().then(result => {
                 if (result.success) {
-                    console.log('✅ Ramp API connection successful');
+                    console.log('✅ Secure Ramp API connection successful');
                 } else {
-                    console.warn('⚠️ Ramp API connection failed:', result.error);
-                    useRampAPI = false;
+                    console.warn('⚠️ Secure Ramp API connection failed:', result.error);
+                    // Don't disable useRampAPI - let it try and fallback gracefully
                 }
             });
         } else {
-            console.log('Using sample data - Ramp API credentials not configured');
+            console.log('Using sample data - Secure Ramp API not configured');
         }
     } else {
-        console.log('Ramp integration not loaded - using sample data');
+        console.log('Secure Ramp integration not loaded - using sample data');
     }
 }
 

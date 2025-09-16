@@ -1,0 +1,26 @@
+{
+  "name": "approval-dashboard",
+  "version": "1.0.0",
+  "description": "Weekly dashboard for pending approvals over $10,000 with Ramp integration",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "dashboard",
+    "approvals",
+    "ramp",
+    "finance",
+    "vercel"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

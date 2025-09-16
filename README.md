@@ -14,128 +14,121 @@ Build a weekly dashboard to review pending approvals over $10,000.
 
 ## Connect to Ramp Data
 
-This dashboard can connect directly to your Ramp account to display real pending approvals instead of sample data. Here's how to set it up:
+This dashboard can connect securely to your Ramp account using serverless functions that keep your API credentials safe on the server-side.
 
-### Prerequisites
+### Secure Architecture
 
-1. **Ramp Account**: You need an active Ramp business account
-2. **API Access**: Contact your Ramp account manager to enable API access
-3. **Developer App**: Create a developer app in your Ramp settings
+🔒 **Server-side API calls**: Your Ramp credentials stay secure on Vercel's servers  
+🌐 **Client-side dashboard**: Frontend fetches data from your secure API endpoint  
+🔄 **Automatic fallback**: Uses sample data if API is unavailable  
 
-### Step 1: Create a Ramp Developer App
+### Step 1: Get Ramp API Credentials
 
-1. **Login to Ramp**: Go to your Ramp account dashboard
-2. **Developer Settings**: Navigate to **Settings > Developer API**
+1. **Contact Ramp**: Ask your account manager to enable API access
+2. **Developer Settings**: Go to **Settings > Developer API** in your Ramp account
 3. **Create App**: Click **Create New App**
-4. **App Details**: 
    - Name: `Approval Dashboard`
-   - Description: `Weekly dashboard for pending approvals over $10,000`
-5. **Grant Types**: Add **Client Credentials** grant type
-6. **Scopes**: Configure these required scopes:
-   - `transactions:read` - To read card transactions
-   - `reimbursements:read` - To read reimbursement requests
-   - `users:read` - To read user information (optional)
-   - `departments:read` - To read department data (optional)
-7. **Save Credentials**: Copy your **Client ID** and **Client Secret**
+   - Description: `Secure serverless integration for approval dashboard`
+4. **Grant Types**: Add **Client Credentials** grant type
+5. **Scopes**: Enable these required scopes:
+   - `transactions:read` - Read card transactions
+   - `reimbursements:read` - Read reimbursement requests
+6. **Save Credentials**: Copy your **Client ID** and **Client Secret**
 
-### Step 2: Configure the Dashboard
+### Step 2: Configure Vercel Environment Variables
 
-1. **Copy Configuration File**:
-   ```bash
-   cp config.example.js config.js
+1. **Go to Vercel Dashboard** → Your Project → **Settings** → **Environment Variables**
+
+2. **Add these variables**:
+   ```
+   RAMP_CLIENT_ID = your_ramp_client_id
+   RAMP_CLIENT_SECRET = your_ramp_client_secret
+   RAMP_ENVIRONMENT = sandbox  (or 'production' for live data)
    ```
 
-2. **Update Configuration**: Edit `config.js` with your Ramp credentials:
-   ```javascript
-   const RAMP_CONFIG = {
-       environment: 'sandbox', // Use 'production' for live data
-       credentials: {
-           clientId: 'your_ramp_client_id_here',
-           clientSecret: 'your_ramp_client_secret_here'
-       },
-       // ... other settings
-   };
-   ```
+3. **Deploy**: Your dashboard will automatically redeploy with secure API access
 
-3. **Test Configuration**: Open the dashboard in your browser and check the browser console for connection status
+### Step 3: Verify Connection
 
-### Step 3: Environment Setup
+1. **Open your deployed dashboard** in browser
+2. **Open browser console** (F12)
+3. **Look for these messages**:
+   - ✅ `"Secure Ramp API integration enabled"`
+   - ✅ `"✅ Secure Ramp API connection successful"`
+   - ✅ `"✅ Loaded X approvals from Ramp API (secure)"`
 
-**For Testing (Sandbox)**:
-- Set `environment: 'sandbox'` in config.js
-- Uses demo data from Ramp's sandbox environment
-- Safe for development and testing
+### Security Features
 
-**For Production (Live Data)**:
-- Set `environment: 'production'` in config.js
-- Connects to your real Ramp account data
-- Use only after thorough testing in sandbox
+✅ **Credentials never exposed** - API keys stay server-side  
+✅ **CORS protection** - API endpoint only serves your dashboard  
+✅ **Error handling** - Graceful fallback to sample data  
+✅ **No client-side secrets** - Browser never sees sensitive data  
 
-### Step 4: Security Best Practices
+### API Endpoint
 
-1. **Never commit credentials**: Add `config.js` to your `.gitignore`
-2. **Environment Variables**: For production deployments, use environment variables:
-   ```javascript
-   clientId: process.env.RAMP_CLIENT_ID,
-   clientSecret: process.env.RAMP_CLIENT_SECRET
-   ```
-3. **HTTPS Only**: Always use HTTPS in production
-4. **Rotate Credentials**: Regularly rotate your API credentials
+The secure integration creates an API endpoint at `/api/approvals` that:
+- Authenticates with Ramp using OAuth 2.0
+- Fetches transactions and reimbursements over $10,000
+- Transforms data to dashboard format
+- Returns JSON response to your frontend
+
+### Environment Setup
+
+**Sandbox (Recommended for testing)**:
+- Set `RAMP_ENVIRONMENT=sandbox`
+- Uses Ramp's demo data for safe testing
+- No risk to production data
+
+**Production (Live data)**:
+- Set `RAMP_ENVIRONMENT=production`  
+- Connects to real Ramp account data
+- Use only after thorough sandbox testing
 
 ### Data Mapping
 
-The dashboard automatically maps Ramp data to the approval format:
-
-**From Ramp Transactions**:
+**Ramp Transactions** → Dashboard Format:
 - Card transactions over $10,000 awaiting approval
-- Includes merchant name, amount, card holder, department
-- Maps to dashboard format with calculated priority levels
+- Maps merchant name, amount, card holder, department
+- Calculates priority based on amount and age
 
-**From Ramp Reimbursements**:
-- Employee reimbursement requests over $10,000 in pending status
-- Includes requester details, amount, submission date
+**Ramp Reimbursements** → Dashboard Format:
+- Employee reimbursements over $10,000 in pending status
+- Maps requester details, amounts, submission dates
 - Automatically calculates days pending
-
-### Customization Options
-
-Edit `config.js` to customize:
-
-```javascript
-dashboard: {
-    minApprovalAmount: 10000,        // Minimum amount threshold
-    lookbackDays: 30,                // How far back to fetch data
-    refreshInterval: 5 * 60 * 1000,  // Auto-refresh interval
-    departmentMapping: {             // Map Ramp dept names to display names
-        'Engineering': 'it',
-        'Finance': 'finance'
-        // ... add your mappings
-    }
-}
-```
 
 ### Troubleshooting
 
-**Dashboard shows "Using sample data"**:
-- Check that `config.js` exists and has valid credentials
-- Verify your Ramp app has the required scopes enabled
-- Check browser console for detailed error messages
+**"Using sample data" in console**:
+- Check Vercel environment variables are set correctly
+- Verify Ramp app has required scopes enabled
+- Ensure RAMP_ENVIRONMENT is set to 'sandbox' or 'production'
 
-**API Connection Errors**:
-- Verify credentials are correct
-- Ensure your IP is not blocked by Ramp
-- Check that your Ramp app is active
-- Contact Ramp support if issues persist
+**"Secure Ramp API connection failed"**:
+- Verify credentials in Vercel environment variables
+- Check that your Ramp app is active and approved
+- Try sandbox environment first before production
 
-**No Data Returned**:
-- Confirm you have transactions/reimbursements over $10,000
-- Check the date range (default is last 30 days)
-- Verify the approval status filters in the API calls
+**API endpoint errors**:
+- Check `/api/approvals` endpoint is accessible
+- Verify serverless function deployed correctly
+- Look at Vercel function logs for detailed errors
 
-### Support
+### Manual Testing
 
-- **Ramp API Documentation**: [docs.ramp.com](https://docs.ramp.com)
-- **Ramp Developer Support**: [developer-support@ramp.com](mailto:developer-support@ramp.com)
-- **Dashboard Issues**: Check browser console for error details
+You can test your secure API directly:
+```bash
+curl https://your-dashboard.vercel.app/api/approvals
+```
+
+Should return:
+```json
+{
+  "success": true,
+  "data": [...],
+  "count": 5,
+  "source": "ramp-api"
+}
+```
 
 ## Local Development
 
