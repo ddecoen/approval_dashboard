@@ -69,30 +69,45 @@ class RampAPI {
     }
 
     // Fetch pending transactions
-    async getPendingTransactions(minAmount = 1000000) { // 10000 * 100 cents
-        const params = new URLSearchParams({
-            min_amount: minAmount.toString()
-        });
+    async getPendingTransactions(minAmount = 100000) { // $1000 in cents
+        const params = new URLSearchParams();
         
-        return await this.makeRequest(`/transactions?${params}`);
+        if (minAmount) {
+            params.append('min_amount', minAmount.toString());
+        }
+        
+        const queryString = params.toString();
+        const endpoint = `/transactions${queryString ? '?' + queryString : ''}`;
+        
+        return await this.makeRequest(endpoint);
     }
 
     // Fetch pending reimbursements
-    async getPendingReimbursements(minAmount = 1000000) {
-        const params = new URLSearchParams({
-            min_amount: minAmount.toString(),
-            status: 'PENDING_APPROVAL'
-        });
+    async getPendingReimbursements(minAmount = 100000) { // $1000 in cents
+        const params = new URLSearchParams();
         
-        return await this.makeRequest(`/reimbursements?${params}`);
+        if (minAmount) {
+            params.append('min_amount', minAmount.toString());
+        }
+        
+        // Remove status filter to see all reimbursements
+        // params.append('status', 'PENDING_APPROVAL');
+
+        const queryString = params.toString();
+        const endpoint = `/reimbursements${queryString ? '?' + queryString : ''}`;
+        
+        return await this.makeRequest(endpoint);
     }
 }
 
 // Data transformation functions
 function transformTransaction(rampTransaction) {
-    const amount = rampTransaction.amount / 100;
+    const amount = rampTransaction.amount / 100; // Convert from cents
     
-    if (amount < 10000) return null;
+    // Only include transactions over $1,000 (lowered from $10,000)
+    if (amount < 1000) {
+        return null;
+    }
 
     return {
         id: `TXN-${rampTransaction.id.slice(-8).toUpperCase()}`,
@@ -110,7 +125,10 @@ function transformTransaction(rampTransaction) {
 function transformReimbursement(rampReimbursement) {
     const amount = rampReimbursement.amount?.amount / 100 || 0;
     
-    if (amount < 10000) return null;
+    // Only include reimbursements over $1,000 (lowered from $10,000)
+    if (amount < 1000) {
+        return null;
+    }
 
     return {
         id: `REIMB-${rampReimbursement.id.slice(-8).toUpperCase()}`,
