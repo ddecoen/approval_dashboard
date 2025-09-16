@@ -97,9 +97,6 @@ class RampAPI {
 
 // Data transformation functions
 function transformTransaction(rampTransaction) {
-    // Debug: Log the raw amount to see format
-    console.log('Raw transaction amount:', rampTransaction.amount, typeof rampTransaction.amount);
-    
     // Handle different amount formats from Ramp
     let amount = 0;
     if (typeof rampTransaction.amount === 'number') {
@@ -118,7 +115,7 @@ function transformTransaction(rampTransaction) {
         id: `TXN-${rampTransaction.id.slice(-8).toUpperCase()}`,
         department: rampTransaction.card_holder?.department_name?.toLowerCase() || 'unknown',
         description: rampTransaction.merchant_name || rampTransaction.merchant_descriptor || 'Card Transaction',
-        amount: amount,
+        amount: parseFloat(amount.toFixed(2)), // Format to 2 decimal places
         requestor: `${rampTransaction.card_holder?.first_name || ''} ${rampTransaction.card_holder?.last_name || ''}`.trim(),
         dateSubmitted: rampTransaction.user_transaction_time || rampTransaction.accounting_date,
         priority: calculatePriority(amount),
@@ -128,9 +125,6 @@ function transformTransaction(rampTransaction) {
 }
 
 function transformReimbursement(rampReimbursement) {
-    // Debug: Log the raw amount to see format
-    console.log('Raw reimbursement amount:', rampReimbursement.amount, typeof rampReimbursement.amount);
-    
     // Handle different amount formats from Ramp
     let amount = 0;
     if (rampReimbursement.amount && typeof rampReimbursement.amount === 'object' && rampReimbursement.amount.amount) {
@@ -147,7 +141,7 @@ function transformReimbursement(rampReimbursement) {
         id: `REIMB-${rampReimbursement.id.slice(-8).toUpperCase()}`,
         department: rampReimbursement.user?.department_name?.toLowerCase() || 'unknown',
         description: rampReimbursement.memo || 'Employee Reimbursement',
-        amount: amount,
+        amount: parseFloat(amount.toFixed(2)), // Format to 2 decimal places
         requestor: `${rampReimbursement.user?.first_name || ''} ${rampReimbursement.user?.last_name || ''}`.trim(),
         dateSubmitted: rampReimbursement.created_at,
         priority: calculatePriority(amount),
