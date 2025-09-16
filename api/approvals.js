@@ -68,13 +68,19 @@ class RampAPI {
         return await response.json();
     }
 
-    // Fetch last 5 approved transactions (any amount)
+    // Fetch transactions over $5,000 from last 30 days
     async getPendingTransactions() {
         const params = new URLSearchParams();
         
-        // Remove amount filter to get any transaction
-        // Get recent transactions, limit to reasonable number
-        params.append('limit', '20'); // Get more to filter from
+        // Set minimum amount to $5,000 (in cents)
+        params.append('min_amount', '500000');
+        
+        // Set date range to last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        params.append('start', thirtyDaysAgo.toISOString());
+        
+        // Get all matching transactions (remove limit)
         
         const queryString = params.toString();
         const endpoint = `/transactions${queryString ? '?' + queryString : ''}`;
@@ -82,12 +88,17 @@ class RampAPI {
         return await this.makeRequest(endpoint);
     }
 
-    // Fetch last 5 approved reimbursements (any amount)
+    // Fetch reimbursements over $5,000 from last 30 days
     async getPendingReimbursements() {
         const params = new URLSearchParams();
         
-        // Remove amount filter to get any reimbursement
-        params.append('limit', '20'); // Get more to filter from
+        // Set minimum amount to $5,000 (in cents)
+        params.append('min_amount', '500000');
+        
+        // Set date range to last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        params.append('start', thirtyDaysAgo.toISOString());
         
         const queryString = params.toString();
         const endpoint = `/reimbursements${queryString ? '?' + queryString : ''}`;
@@ -100,8 +111,11 @@ class RampAPI {
 function transformTransaction(rampTransaction) {
     const amount = rampTransaction.amount / 100; // Convert from cents
     
-    // Accept all transactions (no amount filter)
-    
+    // Only include transactions over $5,000
+    if (amount < 5000) {
+        return null;
+    }
+
     return {
         id: `TXN-${rampTransaction.id.slice(-8).toUpperCase()}`,
         department: rampTransaction.card_holder?.department_name?.toLowerCase() || 'unknown',
@@ -118,8 +132,11 @@ function transformTransaction(rampTransaction) {
 function transformReimbursement(rampReimbursement) {
     const amount = rampReimbursement.amount?.amount / 100 || 0;
     
-    // Accept all reimbursements (no amount filter)
-    
+    // Only include reimbursements over $5,000
+    if (amount < 5000) {
+        return null;
+    }
+
     return {
         id: `REIMB-${rampReimbursement.id.slice(-8).toUpperCase()}`,
         department: rampReimbursement.user?.department_name?.toLowerCase() || 'unknown',
@@ -173,12 +190,12 @@ async function handler(req, res) {
             rampAPI.getPendingReimbursements()
         ]);
 
-        // Transform and combine data - limit to 5 total for dashboard
+        // Transform and combine all transactions over $5,000
         const allApprovals = [];
         
-        // Transform transactions (limit to first few)
+        // Transform all matching transactions
         if (transactions?.data) {
-            transactions.data.slice(0, 10).forEach(txn => {
+            transactions.data.forEach(txn => {
                 const transformed = transformTransaction(txn);
                 if (transformed) {
                     allApprovals.push(transformed);
@@ -186,27 +203,23 @@ async function handler(req, res) {
             });
         }
         
-        // Transform reimbursements (limit to first few)
-        if (reimbursements?.data && allApprovals.length < 5) {
-            const remainingSlots = 5 - allApprovals.length;
-            reimbursements.data.slice(0, remainingSlots + 5).forEach(reimb => {
-                if (allApprovals.length < 5) {
-                    const transformed = transformReimbursement(reimb);
-                    if (transformed) {
-                        allApprovals.push(transformed);
-                    }
+        // Transform all matching reimbursements
+        if (reimbursements?.data) {
+            reimbursements.data.forEach(reimb => {
+                const transformed = transformReimbursement(reimb);
+                if (transformed) {
+                    allApprovals.push(transformed);
                 }
             });
         }
         
-        // Sort by date descending and limit to 5
-        allApprovals.sort((a, b) => new Date(b.dateSubmitted) - new Date(a.dateSubmitted));
-        const limitedApprovals = allApprovals.slice(0, 5);
+        // Sort by amount descending (highest first)
+        allApprovals.sort((a, b) => b.amount - a.amount);
         
         return res.status(200).json({
             success: true,
-            data: limitedApprovals,
-            count: limitedApprovals.length,
+            data: allApprovals,
+            count: allApprovals.length,
             source: 'ramp-api'
         });
         
