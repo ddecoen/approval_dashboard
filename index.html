@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Approval Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Weekly Approval Dashboard</h1>
+            <div class="week-info">
+                <span id="current-week"></span>
+                <span id="total-pending"></span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="dashboard-controls">
+            <div class="filters">
+                <select id="department-filter">
+                    <option value="all">All Departments</option>
+                    <option value="finance">Finance</option>
+                    <option value="operations">Operations</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="it">IT</option>
+                </select>
+                
+                <select id="sort-by">
+                    <option value="amount-desc">Amount (High to Low)</option>
+                    <option value="amount-asc">Amount (Low to High)</option>
+                    <option value="date-desc">Date (Newest)</option>
+                    <option value="date-asc">Date (Oldest)</option>
+                </select>
+            </div>
+            
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <h3 id="total-amount">$0</h3>
+                    <p>Total Pending</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="approval-count">0</h3>
+                    <p>Items Pending</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="avg-amount">$0</h3>
+                    <p>Average Amount</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="approvals-table">
+            <table id="approvals">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Department</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Requestor</th>
+                        <th>Date Submitted</th>
+                        <th>Days Pending</th>
+                        <th>Priority</th>
+                    </tr>
+                </thead>
+                <tbody id="approvals-body">
+                    <!-- Dynamic content will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
