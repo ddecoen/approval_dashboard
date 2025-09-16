@@ -34,6 +34,10 @@
                     <option value="date-desc">Date (Newest)</option>
                     <option value="date-asc">Date (Oldest)</option>
                 </select>
+                
+                <button onclick="refreshData()" class="refresh-btn" title="Refresh Data">
+                    <span id="refresh-icon">🔄</span> Refresh
+                </button>
             </div>
             
             <div class="summary-stats">
@@ -73,6 +77,8 @@
         </div>
     </main>
 
+    <script src="config.js"></script>
+    <script src="ramp-integration.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

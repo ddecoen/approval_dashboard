@@ -1,4 +1,5 @@
 // Sample data for pending approvals over $10,000
+// This will be used as fallback when Ramp API is not configured
 const pendingApprovals = [
     {
         id: 'REQ-2024-001',
@@ -92,6 +93,35 @@ const pendingApprovals = [
     }
 ];
 
+// Ramp Integration Instance
+let rampIntegration = null;
+let useRampAPI = false;
+
+// Initialize Ramp integration if available
+function initializeRampIntegration() {
+    if (typeof RampIntegration !== 'undefined') {
+        rampIntegration = new RampIntegration();
+        useRampAPI = rampIntegration.isConfigured;
+        
+        if (useRampAPI) {
+            console.log('Ramp API integration enabled');
+            // Test the connection
+            rampIntegration.testConnection().then(result => {
+                if (result.success) {
+                    console.log('✅ Ramp API connection successful');
+                } else {
+                    console.warn('⚠️ Ramp API connection failed:', result.error);
+                    useRampAPI = false;
+                }
+            });
+        } else {
+            console.log('Using sample data - Ramp API credentials not configured');
+        }
+    } else {
+        console.log('Ramp integration not loaded - using sample data');
+    }
+}
+
 let filteredApprovals = [...pendingApprovals];
 
 // Utility functions
@@ -133,6 +163,86 @@ function getCurrentWeekRange() {
     
     const options = { month: 'short', day: 'numeric' };
     return `${monday.toLocaleDateString('en-US', options)} - ${sunday.toLocaleDateString('en-US', options)}, ${today.getFullYear()}`;
+}
+
+// Load approvals data from Ramp API or sample data
+async function loadApprovalsData() {
+    try {
+        if (useRampAPI && rampIntegration) {
+            console.log('Fetching data from Ramp API...');
+            showLoadingState(true);
+            
+            const rampData = await rampIntegration.getPendingApprovals();
+            filteredApprovals = [...rampData];
+            
+            console.log(`Loaded ${filteredApprovals.length} approvals from Ramp API`);
+            showLoadingState(false);
+        } else {
+            // Use sample data
+            filteredApprovals = [...pendingApprovals];
+            console.log(`Using ${filteredApprovals.length} sample approvals`);
+        }
+    } catch (error) {
+        console.error('Error loading approvals data:', error);
+        showErrorState(error.message);
+        // Fallback to sample data on error
+        filteredApprovals = [...pendingApprovals];
+        showLoadingState(false);
+    }
+}
+
+// Show/hide loading state
+function showLoadingState(isLoading) {
+    const tbody = document.getElementById('approvals-body');
+    if (isLoading) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 2rem;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                        <div style="width: 20px; height: 20px; border: 2px solid #667eea; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        Loading approvals data...
+                    </div>
+                </td>
+            </tr>
+        `;
+        // Add CSS for loading spinner
+        if (!document.getElementById('loading-styles')) {
+            const style = document.createElement('style');
+            style.id = 'loading-styles';
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+}
+
+// Show error state
+function showErrorState(errorMessage) {
+    const tbody = document.getElementById('approvals-body');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="8" style="text-align: center; padding: 2rem; color: #dc3545;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                    <div style="font-size: 1.2rem; font-weight: 600;">⚠️ Error Loading Data</div>
+                    <div style="color: #6c757d;">${errorMessage}</div>
+                    <button onclick="refreshData()" style="padding: 0.5rem 1rem; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// Refresh data function
+async function refreshData() {
+    console.log('Refreshing approvals data...');
+    await loadApprovalsData();
+    applySorting();
+    renderApprovalsTable();
+    updateSummaryStats();
 }
 
 // Update summary statistics
@@ -216,18 +326,29 @@ function setupEventListeners() {
 }
 
 // Initialize the dashboard
-function initDashboard() {
+async function initDashboard() {
     // Set current week
     document.getElementById('current-week').textContent = `Week of ${getCurrentWeekRange()}`;
+    
+    // Initialize Ramp integration
+    initializeRampIntegration();
     
     // Setup event listeners
     setupEventListeners();
     
+    // Load approvals data (async)
+    await loadApprovalsData();
+    
     // Initial render
-    filteredApprovals = [...pendingApprovals];
     applySorting();
     renderApprovalsTable();
     updateSummaryStats();
+    
+    // Set up auto-refresh if using Ramp API
+    if (useRampAPI) {
+        setInterval(refreshData, 5 * 60 * 1000); // Refresh every 5 minutes
+        console.log('Auto-refresh enabled (5 minute interval)');
+    }
 }
 
 // Start the application when DOM is loaded

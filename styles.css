@@ -70,6 +70,46 @@ main {
     border-color: #667eea;
 }
 
+.refresh-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #667eea;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.refresh-btn:hover {
+    background: #5a6fd8;
+    border-color: #5a6fd8;
+    transform: translateY(-1px);
+}
+
+.refresh-btn:active {
+    transform: translateY(0);
+}
+
+.refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#refresh-icon {
+    font-size: 1.1rem;
+    transition: transform 0.3s;
+}
+
+.refresh-btn.refreshing #refresh-icon {
+    animation: spin 1s linear infinite;
+}
+
 .summary-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
