@@ -97,7 +97,20 @@ class RampAPI {
 
 // Data transformation functions
 function transformTransaction(rampTransaction) {
-    const amount = rampTransaction.amount / 100; // Convert from cents
+    // Debug: Log the raw amount to see format
+    console.log('Raw transaction amount:', rampTransaction.amount, typeof rampTransaction.amount);
+    
+    // Handle different amount formats from Ramp
+    let amount = 0;
+    if (typeof rampTransaction.amount === 'number') {
+        // If it's already in dollars
+        amount = rampTransaction.amount > 1000 ? rampTransaction.amount / 100 : rampTransaction.amount;
+    } else if (rampTransaction.amount && typeof rampTransaction.amount === 'object') {
+        // If it's an object with amount property
+        amount = rampTransaction.amount.amount / 100;
+    } else {
+        amount = rampTransaction.amount / 100; // Default behavior
+    }
     
     // Accept all transactions (no amount filter)
     
@@ -115,7 +128,18 @@ function transformTransaction(rampTransaction) {
 }
 
 function transformReimbursement(rampReimbursement) {
-    const amount = rampReimbursement.amount?.amount / 100 || 0;
+    // Debug: Log the raw amount to see format
+    console.log('Raw reimbursement amount:', rampReimbursement.amount, typeof rampReimbursement.amount);
+    
+    // Handle different amount formats from Ramp
+    let amount = 0;
+    if (rampReimbursement.amount && typeof rampReimbursement.amount === 'object' && rampReimbursement.amount.amount) {
+        amount = rampReimbursement.amount.amount / 100; // Cents to dollars
+    } else if (typeof rampReimbursement.amount === 'number') {
+        amount = rampReimbursement.amount > 1000 ? rampReimbursement.amount / 100 : rampReimbursement.amount;
+    } else {
+        amount = 0;
+    }
     
     // Accept all reimbursements (no amount filter)
     
