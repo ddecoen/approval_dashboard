@@ -68,19 +68,18 @@ class RampAPI {
         return await response.json();
     }
 
-    // Fetch transactions over $5,000 from last 30 days
+    // Fetch all transactions from last 7 days (any amount)
     async getPendingTransactions() {
         const params = new URLSearchParams();
         
-        // Set minimum amount to $5,000 (in cents)
-        params.append('min_amount', '500000');
+        // Remove amount filter - show all transactions
         
-        // Set date range to last 30 days
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        params.append('start', thirtyDaysAgo.toISOString());
+        // Set date range to last 7 days
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        params.append('start', sevenDaysAgo.toISOString());
         
-        // Get all matching transactions (remove limit)
+        // Get all matching transactions
         
         const queryString = params.toString();
         const endpoint = `/transactions${queryString ? '?' + queryString : ''}`;
@@ -88,17 +87,16 @@ class RampAPI {
         return await this.makeRequest(endpoint);
     }
 
-    // Fetch reimbursements over $5,000 from last 30 days
+    // Fetch all reimbursements from last 7 days (any amount)
     async getPendingReimbursements() {
         const params = new URLSearchParams();
         
-        // Set minimum amount to $5,000 (in cents)
-        params.append('min_amount', '500000');
+        // Remove amount filter - show all reimbursements
         
-        // Set date range to last 30 days
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        params.append('start', thirtyDaysAgo.toISOString());
+        // Set date range to last 7 days
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        params.append('start', sevenDaysAgo.toISOString());
         
         const queryString = params.toString();
         const endpoint = `/reimbursements${queryString ? '?' + queryString : ''}`;
@@ -111,11 +109,8 @@ class RampAPI {
 function transformTransaction(rampTransaction) {
     const amount = rampTransaction.amount / 100; // Convert from cents
     
-    // Only include transactions over $5,000
-    if (amount < 5000) {
-        return null;
-    }
-
+    // Accept all transactions (no amount filter)
+    
     return {
         id: `TXN-${rampTransaction.id.slice(-8).toUpperCase()}`,
         department: rampTransaction.card_holder?.department_name?.toLowerCase() || 'unknown',
@@ -132,11 +127,8 @@ function transformTransaction(rampTransaction) {
 function transformReimbursement(rampReimbursement) {
     const amount = rampReimbursement.amount?.amount / 100 || 0;
     
-    // Only include reimbursements over $5,000
-    if (amount < 5000) {
-        return null;
-    }
-
+    // Accept all reimbursements (no amount filter)
+    
     return {
         id: `REIMB-${rampReimbursement.id.slice(-8).toUpperCase()}`,
         department: rampReimbursement.user?.department_name?.toLowerCase() || 'unknown',
@@ -190,7 +182,7 @@ async function handler(req, res) {
             rampAPI.getPendingReimbursements()
         ]);
 
-        // Transform and combine all transactions over $5,000
+        // Transform and combine all transactions from last 7 days
         const allApprovals = [];
         
         // Transform all matching transactions
