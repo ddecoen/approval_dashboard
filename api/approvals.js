@@ -68,7 +68,7 @@ class RampAPI {
         return await response.json();
     }
 
-    // Fetch all transactions from last 7 days (any amount)
+    // Fetch transactions from last 7 days (get more to select most recent 25)
     async getPendingTransactions() {
         const params = new URLSearchParams();
         
@@ -79,7 +79,8 @@ class RampAPI {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         params.append('start', sevenDaysAgo.toISOString());
         
-        // Get all matching transactions
+        // Get more transactions to ensure we have enough to pick 25 most recent
+        params.append('limit', '100');
         
         const queryString = params.toString();
         const endpoint = `/transactions${queryString ? '?' + queryString : ''}`;
@@ -87,7 +88,7 @@ class RampAPI {
         return await this.makeRequest(endpoint);
     }
 
-    // Fetch all reimbursements from last 7 days (any amount)
+    // Fetch reimbursements from last 7 days (get more to select most recent 25)
     async getPendingReimbursements() {
         const params = new URLSearchParams();
         
@@ -97,6 +98,9 @@ class RampAPI {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         params.append('start', sevenDaysAgo.toISOString());
+        
+        // Get more reimbursements to ensure we have enough
+        params.append('limit', '100');
         
         const queryString = params.toString();
         const endpoint = `/reimbursements${queryString ? '?' + queryString : ''}`;
@@ -182,7 +186,7 @@ async function handler(req, res) {
             rampAPI.getPendingReimbursements()
         ]);
 
-        // Transform and combine all transactions from last 7 days
+        // Transform and combine transactions, then select 25 most recent
         const allApprovals = [];
         
         // Transform all matching transactions
@@ -205,13 +209,14 @@ async function handler(req, res) {
             });
         }
         
-        // Sort by amount descending (highest first)
-        allApprovals.sort((a, b) => b.amount - a.amount);
+        // Sort by date descending (most recent first) and limit to 25
+        allApprovals.sort((a, b) => new Date(b.dateSubmitted) - new Date(a.dateSubmitted));
+        const recentApprovals = allApprovals.slice(0, 25);
         
         return res.status(200).json({
             success: true,
-            data: allApprovals,
-            count: allApprovals.length,
+            data: recentApprovals,
+            count: recentApprovals.length,
             source: 'ramp-api'
         });
         
