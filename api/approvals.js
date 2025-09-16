@@ -68,17 +68,12 @@ class RampAPI {
         return await response.json();
     }
 
-    // Fetch recent transactions from last 7 days (small batch)
+    // Fetch most recent transactions (no date filter)
     async getPendingTransactions() {
         const params = new URLSearchParams();
         
-        // Set date range to last 7 days
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        params.append('start', sevenDaysAgo.toISOString());
-        
-        // Smaller limit to ensure we get data
-        params.append('limit', '20');
+        // Remove all filters - just get recent transactions
+        params.append('limit', '10'); // Get a few to choose from
         
         const queryString = params.toString();
         const endpoint = `/transactions${queryString ? '?' + queryString : ''}`;
@@ -86,17 +81,12 @@ class RampAPI {
         return await this.makeRequest(endpoint);
     }
 
-    // Fetch recent reimbursements from last 7 days (small batch)
+    // Fetch most recent reimbursements (no date filter)
     async getPendingReimbursements() {
         const params = new URLSearchParams();
         
-        // Set date range to last 7 days
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        params.append('start', sevenDaysAgo.toISOString());
-        
-        // Smaller limit to ensure we get data
-        params.append('limit', '20');
+        // Remove all filters - just get recent reimbursements
+        params.append('limit', '10'); // Get a few to choose from
         
         const queryString = params.toString();
         const endpoint = `/reimbursements${queryString ? '?' + queryString : ''}`;
@@ -182,7 +172,7 @@ async function handler(req, res) {
             rampAPI.getPendingReimbursements()
         ]);
 
-        // Transform and combine transactions, then select 5 most recent
+        // Transform and combine transactions, then select 5 most recent ever
         const allApprovals = [];
         
         // Transform all matching transactions
