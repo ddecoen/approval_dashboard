@@ -68,19 +68,17 @@ class RampAPI {
         return await response.json();
     }
 
-    // Fetch transactions from last 7 days (get more to select most recent 25)
+    // Fetch recent transactions from last 7 days (small batch)
     async getPendingTransactions() {
         const params = new URLSearchParams();
-        
-        // Remove amount filter - show all transactions
         
         // Set date range to last 7 days
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         params.append('start', sevenDaysAgo.toISOString());
         
-        // Get more transactions to ensure we have enough to pick 25 most recent
-        params.append('limit', '100');
+        // Smaller limit to ensure we get data
+        params.append('limit', '20');
         
         const queryString = params.toString();
         const endpoint = `/transactions${queryString ? '?' + queryString : ''}`;
@@ -88,19 +86,17 @@ class RampAPI {
         return await this.makeRequest(endpoint);
     }
 
-    // Fetch reimbursements from last 7 days (get more to select most recent 25)
+    // Fetch recent reimbursements from last 7 days (small batch)
     async getPendingReimbursements() {
         const params = new URLSearchParams();
-        
-        // Remove amount filter - show all reimbursements
         
         // Set date range to last 7 days
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         params.append('start', sevenDaysAgo.toISOString());
         
-        // Get more reimbursements to ensure we have enough
-        params.append('limit', '100');
+        // Smaller limit to ensure we get data
+        params.append('limit', '20');
         
         const queryString = params.toString();
         const endpoint = `/reimbursements${queryString ? '?' + queryString : ''}`;
@@ -186,7 +182,7 @@ async function handler(req, res) {
             rampAPI.getPendingReimbursements()
         ]);
 
-        // Transform and combine transactions, then select 25 most recent
+        // Transform and combine transactions, then select 5 most recent
         const allApprovals = [];
         
         // Transform all matching transactions
@@ -209,9 +205,9 @@ async function handler(req, res) {
             });
         }
         
-        // Sort by date descending (most recent first) and limit to 25
+        // Sort by date descending (most recent first) and limit to 5
         allApprovals.sort((a, b) => new Date(b.dateSubmitted) - new Date(a.dateSubmitted));
-        const recentApprovals = allApprovals.slice(0, 25);
+        const recentApprovals = allApprovals.slice(0, 5);
         
         return res.status(200).json({
             success: true,
